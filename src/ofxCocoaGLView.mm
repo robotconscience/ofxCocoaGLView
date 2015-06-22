@@ -17,13 +17,29 @@ static CVReturn DisplayLinkCallback(CVDisplayLinkRef displayLink,  const CVTimeS
 
 class ofxCocoaGLViewWindowProxy : public ofAppBaseWindow
 {
+	ofCoreEvents coreEvents;
+	shared_ptr<ofBaseRenderer> currentRenderer;
+	
 public:
-
+	
+	static void loop(){};
+	static bool doesLoop(){ return false; }
+	static bool allowsMultiWindow(){ return true; }
+	static bool needsPolling(){ return true; }
+	static void pollEvents(){  }
+	
+	virtual void setup(const ofWindowSettings & settings){}
+	virtual void update(){}
+	virtual void draw(){}
+	virtual ofCoreEvents & events(){ return coreEvents; };
+	virtual shared_ptr<ofBaseRenderer> & renderer(){ return currentRenderer; };
+	
 	ofxCocoaGLView *view;
 
 	ofxCocoaGLViewWindowProxy(ofxCocoaGLView *view_)
 	{
 		view = view_;
+		currentRenderer = shared_ptr<ofBaseRenderer>(new ofGLRenderer(this));
 	}
 
 	int getWidth()
@@ -306,7 +322,7 @@ static NSOpenGLContext *_context = nil;
 	BEGIN_OPENGL();
 	
 	[self setup];
-	ofNotifySetup();
+	ofEvents().notifySetup();
 
 	END_OPENGL();
 	
@@ -451,7 +467,6 @@ static NSOpenGLContext *_context = nil;
 	NSPoint p = [self.window convertScreenToBase:[NSEvent mouseLocation]];
 	NSPoint m = [self convertPoint:p fromView:nil];
 	mouseX = m.x;
-	mouseY = self.frame.size.height - m.y;
 
 	BEGIN_OPENGL();
 
@@ -520,25 +535,24 @@ static CVReturn DisplayLinkCallback(CVDisplayLinkRef displayLink,
 		ofPushStyle();
 		
 		[self update];
-		ofNotifyUpdate();
+		ofEvents().notifyUpdate();
 		
 		NSRect r = self.bounds;
 		ofViewport(0, 0, r.size.width, r.size.height);
 
-		float *bgPtr = ofBgColorPtr();
-		bool clearAuto = ofbClearBg();
+		bool clearAuto = ofGetBackgroundAuto();
 
 		if (clearAuto || frameCount < 3)
 		{
-			float * bgPtr = ofBgColorPtr();
-			glClearColor(bgPtr[0], bgPtr[1], bgPtr[2], bgPtr[3]);
+			const ofFloatColor &bgColor = ofGetBackgroundColor();
+			glClearColor(bgColor[0], bgColor[1], bgColor[2], bgColor[3]);
 			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		}
 
 		if (enableSetupScreen) ofSetupScreen();
 
 		[self draw];
-		ofNotifyDraw();
+		ofEvents().notifyDraw();
 		
 		ofPopStyle();
 		glPopMatrix();
@@ -573,7 +587,7 @@ static CVReturn DisplayLinkCallback(CVDisplayLinkRef displayLink,
 	height = r.size.height;
 
 	[self windowResized:r.size];
-	ofNotifyWindowResized(width, height);
+	ofEvents().notifyWindowResized(width, height);
 
 	if (trackingRectTag)
 	{
@@ -596,7 +610,6 @@ static CVReturn DisplayLinkCallback(CVDisplayLinkRef displayLink,
 {
 	NSPoint p = [self.window convertScreenToBase:[NSEvent mouseLocation]];
 	p = [self convertPoint:p fromView:nil];
-	p.y = self.bounds.size.height - p.y;
 
 	mouseX = p.x;
 	mouseY = p.y;
@@ -620,7 +633,7 @@ static int conv_button_number(int n)
 
 	int b = conv_button_number([theEvent buttonNumber]);
 	[self mousePressed:p button:b];
-	ofNotifyMousePressed(p.x, p.y, b);
+	ofEvents().notifyMousePressed(p.x, p.y, b);
 	
 	[self endWindowEvent];
 }
@@ -635,7 +648,7 @@ static int conv_button_number(int n)
 
 	int b = conv_button_number([theEvent buttonNumber]);
 	[self mouseDragged:p button:b];
-	ofNotifyMouseDragged(p.x, p.y, b);
+	ofEvents().notifyMouseDragged(p.x, p.y, b);
 	
 	[self endWindowEvent];
 }
@@ -650,7 +663,7 @@ static int conv_button_number(int n)
 
 	int b = conv_button_number([theEvent buttonNumber]);
 	[self mouseReleased:p button:b];
-	ofNotifyMouseReleased(p.x, p.y, b);
+	ofEvents().notifyMouseReleased(p.x, p.y, b);
 	
 	[self endWindowEvent];
 }
@@ -664,7 +677,7 @@ static int conv_button_number(int n)
 	makeCurrentView(self);
 
 	[self mouseMoved:p];
-	ofNotifyMouseMoved(p.x, p.y);
+	ofEvents().notifyMouseMoved(p.x, p.y);
 	
 	[self endWindowEvent];
 }
@@ -679,7 +692,7 @@ static int conv_button_number(int n)
 
 	int b = conv_button_number([theEvent buttonNumber]);
 	[self mousePressed:p button:b];
-	ofNotifyMousePressed(p.x, p.y, b);
+	ofEvents().notifyMousePressed(p.x, p.y, b);
 	
 	[self endWindowEvent];
 }
@@ -694,7 +707,7 @@ static int conv_button_number(int n)
 
 	int b = conv_button_number([theEvent buttonNumber]);
 	[self mouseDragged:p button:b];
-	ofNotifyMouseDragged(p.x, p.y, b);
+	ofEvents().notifyMouseDragged(p.x, p.y, b);
 	
 	[self endWindowEvent];
 }
@@ -709,7 +722,7 @@ static int conv_button_number(int n)
 
 	int b = conv_button_number([theEvent buttonNumber]);
 	[self mouseReleased:p button:b];
-	ofNotifyMouseReleased(p.x, p.y, b);
+	ofEvents().notifyMouseReleased(p.x, p.y, b);
 	
 	[self endWindowEvent];
 }
@@ -724,7 +737,7 @@ static int conv_button_number(int n)
 
 	int b = conv_button_number([theEvent buttonNumber]);
 	[self mousePressed:p button:b];
-	ofNotifyMousePressed(p.x, p.y, b);
+	ofEvents().notifyMousePressed(p.x, p.y, b);
 	
 	[self endWindowEvent];
 }
@@ -739,7 +752,7 @@ static int conv_button_number(int n)
 
 	int b = conv_button_number([theEvent buttonNumber]);
 	[self mouseDragged:p button:b];
-	ofNotifyMouseDragged(p.x, p.y, b);
+	ofEvents().notifyMouseDragged(p.x, p.y, b);
 	
 	[self endWindowEvent];
 }
@@ -754,7 +767,7 @@ static int conv_button_number(int n)
 
 	int b = conv_button_number([theEvent buttonNumber]);
 	[self mouseReleased:p button:b];
-	ofNotifyMouseReleased(p.x, p.y, b);
+	ofEvents().notifyMouseReleased(p.x, p.y, b);
 	
 	[self endWindowEvent];
 }
@@ -803,7 +816,7 @@ static int conv_button_number(int n)
 	}
 
 	[self keyPressed:key];
-	ofNotifyKeyPressed(key);
+	ofEvents().notifyKeyPressed(key);
 	
 	[self endWindowEvent];
 }
@@ -844,7 +857,7 @@ static int conv_button_number(int n)
 	makeCurrentView(self);
 
 	[self keyReleased:key];
-	ofNotifyKeyReleased(key);
+	ofEvents().notifyKeyReleased(key);
 	
 	[self endWindowEvent];
 }

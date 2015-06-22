@@ -20,7 +20,7 @@
 	
 	ofNoFill();
 	ofSetColor(255);
-	ofCircle(self.mouseX, self.mouseY, 100);
+	ofDrawCircle(self.mouseX, self.mouseY, 100);
 
 }
 

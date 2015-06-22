@@ -2,5 +2,10 @@
 
 int main(int argc, char *argv[])
 {
-	return NSApplicationMain(argc, (const char **)argv);
+	@try {
+		return NSApplicationMain(argc, (const char **)argv);
+	}
+	@catch (NSException *exception) {
+		NSLog(@"%@", exception);
+	}
 }
