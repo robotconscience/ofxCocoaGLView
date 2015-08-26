@@ -40,6 +40,7 @@ public:
 	{
 		view = view_;
 		currentRenderer = shared_ptr<ofBaseRenderer>(new ofGLRenderer(this));
+        currentRenderer->setOrientation(OF_ORIENTATION_DEFAULT, false);
 	}
 
 	int getWidth()
@@ -192,7 +193,7 @@ static NSOpenGLContext *_context = nil;
 		ScopedAutoReleasePool pool;
 		
 		initialised = NO;
-		enableSetupScreen = true;
+		enableSetupScreen = YES;
 		frameCount = 0;
 
 		translucent = NO;
@@ -587,7 +588,8 @@ static CVReturn DisplayLinkCallback(CVDisplayLinkRef displayLink,
 	height = r.size.height;
 
 	[self windowResized:r.size];
-	ofEvents().notifyWindowResized(width, height);
+    if ( ofGetWindowPtr() != nullptr )
+        ofEvents().notifyWindowResized(width, height);
 
 	if (trackingRectTag)
 	{
