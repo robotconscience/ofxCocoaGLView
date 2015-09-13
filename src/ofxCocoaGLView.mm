@@ -212,6 +212,7 @@ static NSOpenGLContext *_context = nil;
 		useDisplayLink = NO;
 
         mouseEventsEnabled = YES;
+        windowEventsEnabled = YES;
         
 		targetFrameRate = 60;
 		frameRate = 0;
@@ -475,6 +476,7 @@ static NSOpenGLContext *_context = nil;
 
 - (void)enableWindowEvents:(BOOL)v
 {
+    windowEventsEnabled = v;
 	if (v)
 	{
 		[[self window] makeFirstResponder:self];
@@ -825,12 +827,70 @@ static int conv_button_number(int n)
 	ofEvents().notifyMouseReleased(p.x, p.y, b);
 	
 	[self endWindowEvent];
+
+}
+
+-(void)flagsChanged:(NSEvent *)theEvent {
+    [self beginWindowEvent];
+    
+    makeCurrentView(self);
+    
+    NSEventModifierFlags flags = [theEvent modifierFlags];
+    
+    if( flags & NSCommandKeyMask ){
+        [self keyPressed:OF_KEY_SUPER];
+        ofEvents().notifyKeyPressed(OF_KEY_SUPER);
+        
+    } else if( flags & NSShiftKeyMask ){
+        [self keyPressed:OF_KEY_SHIFT];
+        ofEvents().notifyKeyPressed(OF_KEY_SHIFT);
+        
+    } else if( flags & NSControlKeyMask ){
+        [self keyPressed:OF_KEY_CONTROL];
+        ofEvents().notifyKeyPressed(OF_KEY_CONTROL);
+        
+    }   else if( flags & NSAlternateKeyMask ){
+        [self keyPressed:OF_KEY_ALT];
+        ofEvents().notifyKeyPressed(OF_KEY_ALT);
+        
+    } else {
+        switch( [theEvent keyCode] ){
+            case 58:
+                [self keyReleased:OF_KEY_ALT];
+                ofEvents().notifyKeyReleased(OF_KEY_ALT);
+                break;
+            case 55:
+                [self keyReleased:OF_KEY_SUPER];
+                ofEvents().notifyKeyReleased(OF_KEY_SUPER);
+                break;
+                
+            case 56:
+                [self keyReleased:OF_KEY_SHIFT];
+                ofEvents().notifyKeyReleased(OF_KEY_SHIFT);
+                break;
+                
+            case 59:
+                [self keyReleased:OF_KEY_CONTROL];
+                ofEvents().notifyKeyReleased(OF_KEY_CONTROL);
+                break;
+        }
+    }
+    //    } else if( flags & NSNumericPadKeyMask ){
+    //        ofNotifyKeyPressed(OF_KEY_SUPER);
+    //    } else if( flags & NSHelpKeyMask ){
+    //        ofNotifyKeyPressed(OF_KEY_SUPER);
+    //    } else if( flags & NSFunctionKeyMask ){
+    //        ofNotifyKeyPressed(OF_KEY_);
+    //    }
+    
+    [self endWindowEvent];
 }
 
 #define KEY_CASE(CODE, KEY) case CODE: key = KEY; break;
 
 - (void)keyDown:(NSEvent *)theEvent
 {
+    if (!windowEventsEnabled) return;
 	const char *c = [[theEvent charactersIgnoringModifiers] UTF8String];
 	int key = c[0];
 	
@@ -878,6 +938,7 @@ static int conv_button_number(int n)
 
 - (void)keyUp:(NSEvent *)theEvent
 {
+    if (!windowEventsEnabled) return;
 	const char *c = [[theEvent charactersIgnoringModifiers] UTF8String];
 	int key = c[0];
 	

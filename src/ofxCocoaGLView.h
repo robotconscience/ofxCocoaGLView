@@ -17,6 +17,7 @@
 	BOOL translucent;
 	BOOL useDisplayLink;
     BOOL mouseEventsEnabled;
+    BOOL windowEventsEnabled;
 
 	float targetFrameRate;
 	float frameRate;
