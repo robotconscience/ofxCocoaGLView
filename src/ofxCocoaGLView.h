@@ -32,6 +32,8 @@
 	float width, height;
 	
 	float aspect;
+    
+    int pixelScreenCoordScale;
 }
 
 @property (assign, readonly) float mouseX;
@@ -78,6 +80,8 @@
 - (void)enableWindowEvents:(BOOL)v;
 
 - (void)setKeepAspect:(float)aspect;
+
+- (int) getPixelScreenCoordScale;
 
 //
 

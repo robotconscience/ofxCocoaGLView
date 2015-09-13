@@ -38,8 +38,20 @@ public:
 
 	ofxCocoaGLViewWindowProxy(ofxCocoaGLView *view_)
 	{
-		view = view_;
-		currentRenderer = shared_ptr<ofBaseRenderer>(new ofGLRenderer(this));
+        view = view_;
+        currentRenderer = shared_ptr<ofBaseRenderer>(new ofGLRenderer(this));
+        
+        ofGLWindowSettings settings;
+        settings.glVersionMajor = 2;
+        settings.glVersionMinor = 1;
+        
+        // to-do!
+        if(currentRenderer->getType()==ofGLProgrammableRenderer::TYPE){
+            static_cast<ofGLProgrammableRenderer*>(currentRenderer.get())->setup(settings.glVersionMajor,settings.glVersionMinor);
+        }else{
+            static_cast<ofGLRenderer*>(currentRenderer.get())->setup();
+        }
+        
         currentRenderer->setOrientation(OF_ORIENTATION_DEFAULT, false);
 	}
 
@@ -212,7 +224,9 @@ static NSOpenGLContext *_context = nil;
 
 		displayLink = NULL;
 		updateTimer = nil;
-
+        
+        pixelScreenCoordScale = 1.0;
+        
 		if (_context == nil)
 		{
 			_context = [self openGLContext];
@@ -230,6 +244,15 @@ static NSOpenGLContext *_context = nil;
 				ofLogWarning("ofxCocoaGLView") << "double buffer is disabled";
 		}
 
+        {
+            //BOOL retina = [self wantsBestResolutionOpenGLSurface];
+            
+            NSRect unscaledBounds = [self bounds];
+            NSRect scaledBounds = [self convertRectToBacking:[self bounds]];
+            
+            pixelScreenCoordScale = scaledBounds.size.width / unscaledBounds.size.width;
+        }
+        
 		{
 			localMonitorHandler = [NSEvent addLocalMonitorForEventsMatchingMask:NSMouseMovedMask handler:^(NSEvent *e) {
 				if ([self isVisible])
@@ -465,7 +488,8 @@ static NSOpenGLContext *_context = nil;
 	[self enableWindowEvents:YES];
 
 	// init mouse pos
-	NSPoint p = [self.window convertScreenToBase:[NSEvent mouseLocation]];
+    NSPoint mouse = [NSEvent mouseLocation];
+	NSPoint p = [self.window convertRectFromScreen:NSMakeRect(mouse.x, mouse.y, 1.,1.)].origin;
 	NSPoint m = [self convertPoint:p fromView:nil];
 	mouseX = m.x;
 
@@ -610,7 +634,8 @@ static CVReturn DisplayLinkCallback(CVDisplayLinkRef displayLink,
 
 - (NSPoint)getCurrentMousePos
 {
-	NSPoint p = [self.window convertScreenToBase:[NSEvent mouseLocation]];
+    NSPoint mouse = [NSEvent mouseLocation];
+    NSPoint p = [self.window convertRectFromScreen:NSMakeRect(mouse.x, mouse.y, 1.,1.)].origin;
 	p = [self convertPoint:p fromView:nil];
 
 	mouseX = p.x;
@@ -978,6 +1003,12 @@ static int conv_button_number(int n)
 	r = [sender frameRectForContentRect:r];
 	
 	return r.size;
+}
+
+
+- (int) getPixelScreenCoordScale
+{
+    return pixelScreenCoordScale;
 }
 
 @end
