@@ -211,6 +211,8 @@ static NSOpenGLContext *_context = nil;
 		translucent = NO;
 		useDisplayLink = NO;
 
+        mouseEventsEnabled = YES;
+        
 		targetFrameRate = 60;
 		frameRate = 0;
 
@@ -483,6 +485,12 @@ static NSOpenGLContext *_context = nil;
 	}
 }
 
+
+- (void)enableMouseEvents:(BOOL)v
+{
+    mouseEventsEnabled = v;
+}
+
 - (void)initGL
 {
 	[self enableWindowEvents:YES];
@@ -652,6 +660,8 @@ static int conv_button_number(int n)
 
 - (void)mouseDown:(NSEvent *)theEvent
 {
+    if ( !mouseEventsEnabled ) return;
+    
 	NSPoint p = [self getCurrentMousePos];
 
 	[self beginWindowEvent];
@@ -667,6 +677,8 @@ static int conv_button_number(int n)
 
 - (void)mouseDragged:(NSEvent *)theEvent
 {
+    if ( !mouseEventsEnabled ) return;
+    
 	NSPoint p = [self getCurrentMousePos];
 	
 	[self beginWindowEvent];
@@ -682,6 +694,8 @@ static int conv_button_number(int n)
 
 - (void)mouseUp:(NSEvent *)theEvent
 {
+    if ( !mouseEventsEnabled ) return;
+    
 	NSPoint p = [self getCurrentMousePos];
 
 	[self beginWindowEvent];
@@ -697,6 +711,8 @@ static int conv_button_number(int n)
 
 - (void)_mouseMoved:(NSEvent *)theEvent
 {
+    if ( !mouseEventsEnabled ) return;
+    
 	NSPoint p = [self getCurrentMousePos];
 	
 	[self beginWindowEvent];
@@ -711,6 +727,8 @@ static int conv_button_number(int n)
 
 - (void)rightMouseDown:(NSEvent *)theEvent
 {
+    if ( !mouseEventsEnabled ) return;
+    
 	NSPoint p = [self getCurrentMousePos];
 
 	[self beginWindowEvent];
@@ -726,6 +744,8 @@ static int conv_button_number(int n)
 
 - (void)rightMouseDragged:(NSEvent *)theEvent
 {
+    if ( !mouseEventsEnabled ) return;
+    
 	NSPoint p = [self getCurrentMousePos];
 
 	[self beginWindowEvent];
@@ -741,6 +761,8 @@ static int conv_button_number(int n)
 
 - (void)rightMouseUp:(NSEvent *)theEvent
 {
+    if ( !mouseEventsEnabled ) return;
+    
 	NSPoint p = [self getCurrentMousePos];
 
 	[self beginWindowEvent];
@@ -756,6 +778,8 @@ static int conv_button_number(int n)
 
 - (void)otherMouseDown:(NSEvent *)theEvent
 {
+    if ( !mouseEventsEnabled ) return;
+    
 	NSPoint p = [self getCurrentMousePos];
 
 	[self beginWindowEvent];
@@ -771,6 +795,8 @@ static int conv_button_number(int n)
 
 - (void)otherMouseDragged:(NSEvent *)theEvent
 {
+    if ( !mouseEventsEnabled ) return;
+    
 	NSPoint p = [self getCurrentMousePos];
 
 	[self beginWindowEvent];
@@ -786,6 +812,8 @@ static int conv_button_number(int n)
 
 - (void)otherMouseUp:(NSEvent *)theEvent
 {
+    if ( !mouseEventsEnabled ) return;
+    
 	NSPoint p = [self getCurrentMousePos];
 
 	[self beginWindowEvent];

@@ -16,6 +16,7 @@
 
 	BOOL translucent;
 	BOOL useDisplayLink;
+    BOOL mouseEventsEnabled;
 
 	float targetFrameRate;
 	float frameRate;
@@ -78,6 +79,8 @@
 
 - (void)enableDisplayLink:(BOOL)v;
 - (void)enableWindowEvents:(BOOL)v;
+
+- (void)enableMouseEvents:(BOOL)v;
 
 - (void)setKeepAspect:(float)aspect;
 
