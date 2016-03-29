@@ -267,6 +267,7 @@ static NSOpenGLContext *_context = nil;
 				if ([self isVisible])
 					[self _mouseMoved:e];
 			}];
+            
 
 			NSNotificationCenter *nc = [NSNotificationCenter defaultCenter];
 			
@@ -648,6 +649,10 @@ static CVReturn DisplayLinkCallback(CVDisplayLinkRef displayLink,
     NSPoint p = [self.window convertRectFromScreen:NSMakeRect(mouse.x, mouse.y, 1.,1.)].origin;
 	p = [self convertPoint:p fromView:nil];
 
+    if ( ofIsVFlipped() ){
+        p.y = ofGetHeight() - p.y;
+    }
+    
 	mouseX = p.x;
 	mouseY = p.y;
 
