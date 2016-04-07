@@ -73,7 +73,8 @@ public:
 	}
 
 	ofPoint getWindowSize()
-    {
+	{
+        NSSize size = view.bounds.size;
         return ofPoint(size.width, size.height);
 	}
 
