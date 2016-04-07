@@ -36,6 +36,7 @@
 	float aspect;
     
     int pixelScreenCoordScale;
+    ofOrientation myOrientation;
 }
 
 @property (assign, readonly) float mouseX;

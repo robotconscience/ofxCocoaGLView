@@ -52,23 +52,29 @@ public:
             static_cast<ofGLRenderer*>(currentRenderer.get())->setup();
         }
         
-        currentRenderer->setOrientation(OF_ORIENTATION_DEFAULT, false);
+        currentRenderer->setOrientation(OF_ORIENTATION_DEFAULT, true);
+        setOrientation(OF_ORIENTATION_DEFAULT);
 	}
 
 	int getWidth()
-	{
-		return view.bounds.size.width;
+    {
+        if ( view->myOrientation == OF_ORIENTATION_DEFAULT || view->myOrientation == OF_ORIENTATION_180 || view->myOrientation == OF_ORIENTATION_UNKNOWN)
+            return view.bounds.size.width;
+        else
+            return view.bounds.size.height;
 	}
 
 	int getHeight()
-	{
-		return view.bounds.size.height;
+    {
+        if ( view->myOrientation == OF_ORIENTATION_DEFAULT || view->myOrientation == OF_ORIENTATION_180 || view->myOrientation == OF_ORIENTATION_UNKNOWN)
+            return view.bounds.size.height;
+        else
+            return view.bounds.size.width;
 	}
 
 	ofPoint getWindowSize()
-	{
-		NSSize size = view.bounds.size;
-		return ofPoint(size.width, size.height);
+    {
+        return ofPoint(size.width, size.height);
 	}
 
 	int getFrameNum()
@@ -125,6 +131,15 @@ public:
 	{
 		OFXCOCOAGLVIEW_IGNORED;
 	}
+    
+    
+    void setOrientation(ofOrientation orientation){
+        view->myOrientation = orientation;
+    }
+    
+    ofOrientation getOrientation(){
+        return view->myOrientation;
+    }
 };
 
 static ofPtr<ofxCocoaGLViewWindowProxy> window_proxy;
@@ -229,6 +244,7 @@ static NSOpenGLContext *_context = nil;
 		updateTimer = nil;
         
         pixelScreenCoordScale = 1.0;
+        myOrientation = OF_ORIENTATION_DEFAULT;
         
 		if (_context == nil)
 		{
@@ -572,9 +588,19 @@ static CVReturn DisplayLinkCallback(CVDisplayLinkRef displayLink,
 		
 		[self update];
 		ofEvents().notifyUpdate();
+        
+        ofGetCurrentRenderer()->startRender();
 		
 		NSRect r = self.bounds;
-		ofViewport(0, 0, r.size.width, r.size.height);
+        auto w = r.size.width;
+        auto h = r.size.height;
+        
+        if ( myOrientation == OF_ORIENTATION_90_LEFT || myOrientation == OF_ORIENTATION_90_RIGHT){
+            w = r.size.height;
+            h = r.size.width;
+        }
+        
+//		ofViewport(0, 0, w, h);
 
 		bool clearAuto = ofGetBackgroundAuto();
 
@@ -584,7 +610,7 @@ static CVReturn DisplayLinkCallback(CVDisplayLinkRef displayLink,
 			glClearColor(bgColor[0], bgColor[1], bgColor[2], bgColor[3]);
 			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		}
-
+        
 		if (enableSetupScreen) ofSetupScreen();
 
 		[self draw];
@@ -598,6 +624,8 @@ static CVReturn DisplayLinkCallback(CVDisplayLinkRef displayLink,
 		
 		glFlush();
 		[[self openGLContext] flushBuffer];
+        
+        ofGetCurrentRenderer()->finishRender();
 
 		END_OPENGL();
 	}
@@ -618,10 +646,14 @@ static CVReturn DisplayLinkCallback(CVDisplayLinkRef displayLink,
 	[[self openGLContext] update];
 
 	NSRect r = self.bounds;
-
-	width = r.size.width;
-	height = r.size.height;
-
+    
+    if ( myOrientation == OF_ORIENTATION_90_RIGHT || myOrientation == OF_ORIENTATION_90_LEFT){
+        swap(r.size.width, r.size.height);
+    }
+    
+    width = r.size.width;
+    height = r.size.height;
+    
 	[self windowResized:r.size];
     if ( ofGetWindowPtr() != nullptr )
         ofEvents().notifyWindowResized(width, height);
@@ -665,6 +697,32 @@ static int conv_button_number(int n)
 	return table[n];
 }
 
+static void rotateMouseXY(ofOrientation orientation, int w, int h, double &x, double &y) {
+    int savedY;
+    switch(orientation) {
+        case OF_ORIENTATION_180:
+            x = w - x;
+            y = h - y;
+            break;
+            
+        case OF_ORIENTATION_90_RIGHT:
+            savedY = y;
+            y = x;
+            x = w-savedY;
+            break;
+            
+        case OF_ORIENTATION_90_LEFT:
+            savedY = y;
+            y = h - x;
+            x = savedY;
+            break;
+            
+        case OF_ORIENTATION_DEFAULT:
+        default:
+            break;
+    }
+}
+
 - (void)mouseDown:(NSEvent *)theEvent
 {
     if ( !mouseEventsEnabled ) return;
@@ -676,7 +734,11 @@ static int conv_button_number(int n)
 	makeCurrentView(self);
 
 	int b = conv_button_number([theEvent buttonNumber]);
+    
+    NSRect bounds = [self bounds];
+    rotateMouseXY( myOrientation, bounds.size.width, bounds.size.height, p.x, p.y);
 	[self mousePressed:p button:b];
+    
 	ofEvents().notifyMousePressed(p.x, p.y, b);
 	
 	[self endWindowEvent];
@@ -693,7 +755,11 @@ static int conv_button_number(int n)
 	makeCurrentView(self);
 
 	int b = conv_button_number([theEvent buttonNumber]);
+    
+    NSRect bounds = [self bounds];
+    rotateMouseXY( myOrientation, bounds.size.width, bounds.size.height, p.x, p.y);
 	[self mouseDragged:p button:b];
+    
 	ofEvents().notifyMouseDragged(p.x, p.y, b);
 	
 	[self endWindowEvent];
@@ -710,6 +776,9 @@ static int conv_button_number(int n)
 	makeCurrentView(self);
 
 	int b = conv_button_number([theEvent buttonNumber]);
+    
+    NSRect bounds = [self bounds];
+    rotateMouseXY( myOrientation, bounds.size.width, bounds.size.height, p.x, p.y);
 	[self mouseReleased:p button:b];
 	ofEvents().notifyMouseReleased(p.x, p.y, b);
 	
@@ -725,7 +794,9 @@ static int conv_button_number(int n)
 	[self beginWindowEvent];
 	
 	makeCurrentView(self);
-
+    
+    NSRect bounds = [self bounds];
+    rotateMouseXY( myOrientation, bounds.size.width, bounds.size.height, p.x, p.y);
 	[self mouseMoved:p];
 	ofEvents().notifyMouseMoved(p.x, p.y);
 	
@@ -743,6 +814,9 @@ static int conv_button_number(int n)
 	makeCurrentView(self);
 
 	int b = conv_button_number([theEvent buttonNumber]);
+    
+    NSRect bounds = [self bounds];
+    rotateMouseXY( myOrientation, bounds.size.width, bounds.size.height, p.x, p.y);
 	[self mousePressed:p button:b];
 	ofEvents().notifyMousePressed(p.x, p.y, b);
 	
@@ -760,6 +834,9 @@ static int conv_button_number(int n)
 	makeCurrentView(self);
 
 	int b = conv_button_number([theEvent buttonNumber]);
+    
+    NSRect bounds = [self bounds];
+    rotateMouseXY( myOrientation, bounds.size.width, bounds.size.height, p.x, p.y);
 	[self mouseDragged:p button:b];
 	ofEvents().notifyMouseDragged(p.x, p.y, b);
 	
@@ -777,6 +854,9 @@ static int conv_button_number(int n)
 	makeCurrentView(self);
 
 	int b = conv_button_number([theEvent buttonNumber]);
+    
+    NSRect bounds = [self bounds];
+    rotateMouseXY( myOrientation, bounds.size.width, bounds.size.height, p.x, p.y);
 	[self mouseReleased:p button:b];
 	ofEvents().notifyMouseReleased(p.x, p.y, b);
 	
@@ -794,6 +874,9 @@ static int conv_button_number(int n)
 	makeCurrentView(self);
 
 	int b = conv_button_number([theEvent buttonNumber]);
+    
+    NSRect bounds = [self bounds];
+    rotateMouseXY( myOrientation, bounds.size.width, bounds.size.height, p.x, p.y);
 	[self mousePressed:p button:b];
 	ofEvents().notifyMousePressed(p.x, p.y, b);
 	
@@ -811,6 +894,9 @@ static int conv_button_number(int n)
 	makeCurrentView(self);
 
 	int b = conv_button_number([theEvent buttonNumber]);
+    
+    NSRect bounds = [self bounds];
+    rotateMouseXY( myOrientation, bounds.size.width, bounds.size.height, p.x, p.y);
 	[self mouseDragged:p button:b];
 	ofEvents().notifyMouseDragged(p.x, p.y, b);
 	
@@ -828,6 +914,9 @@ static int conv_button_number(int n)
 	makeCurrentView(self);
 
 	int b = conv_button_number([theEvent buttonNumber]);
+    
+    NSRect bounds = [self bounds];
+    rotateMouseXY( myOrientation, bounds.size.width, bounds.size.height, p.x, p.y);
 	[self mouseReleased:p button:b];
 	ofEvents().notifyMouseReleased(p.x, p.y, b);
 	
